@@ -6,7 +6,7 @@ pipeline {
         checkout scm
       }
     }
-    stage('Docker Build and Push') {
+    stage('Docker pod deploy') {
       steps {
         script {
           podTemplate(yaml: '''
@@ -15,9 +15,6 @@ pipeline {
             spec:
               serviceAccountName: jenkins-admin
               volumes:
-                - name: workspace
-                  persistentVolumeClaim:
-                    claimName: jenkins-pvc
                 - name: docker-socket
                   emptyDir: {}
               containers:
@@ -26,8 +23,13 @@ pipeline {
                   command: [sleep]
                   args: [99d]
                   volumeMounts:
-                    - name: workspace
-                      mountPath: /workspace
+                    - name: docker-socket
+                      mountPath: /var/run
+                - name: docker-daemon
+                  image: docker:19.03-dind
+                  securityContext:
+                    privileged: true
+                  volumeMounts:
                     - name: docker-socket
                       mountPath: /var/run
                 - name: kubectl
@@ -37,6 +39,7 @@ pipeline {
           ''') {
             node(POD_LABEL) {
               container('docker') {
+                checkout scm
                 sh 'docker build -t my-image .'
                 sh 'docker push my-image'
               }
