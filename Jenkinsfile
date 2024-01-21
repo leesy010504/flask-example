@@ -1,8 +1,5 @@
 pipeline {
   agent any
-  tools {
-    gradle 'my-gradle'
-  }
 
   stages {
     stage('Docker pod deploy') {
@@ -35,17 +32,10 @@ pipeline {
                   image: bitnami/kubectl:1.26.0
                   command: [sleep]
                   args: [99d]
-                - name: gradle
-                  image: gradle:7.5.1-jdk11
-                  command: [sleep]
-                  args: [99d]
           ''') {
             node(POD_LABEL) {
               container('docker') {
                 checkout scm
-              }
-              container('gradle') {
-                sh 'gradle build'
               }
             }
           }
