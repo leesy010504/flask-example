@@ -15,14 +15,14 @@ pipeline {
                   emptyDir: {}
               containers:
                 - name: docker
-                  image: docker
+                  image: docker:19.03-dind
                   command: [sleep]
                   args: [99d]
                   volumeMounts:
                     - name: docker-socket
                       mountPath: /var/run
                 - name: docker-daemon
-                  image: docker:dind
+                  image: docker:19.03-dind
                   securityContext:
                     privileged: true
                   volumeMounts:
