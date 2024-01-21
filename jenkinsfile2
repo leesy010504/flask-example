@@ -1,0 +1,39 @@
+pipeline {
+  agent any
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+    stage('Docker Build and Push') {
+      steps {
+        script {
+          podTemplate(yaml: '''
+            ...
+            volumes:
+              - name: workspace
+                persistentVolumeClaim:
+                  claimName: jenkins-pvc
+            containers:
+              - name: docker
+                ...
+                volumeMounts:
+                  - mountPath: /workspace
+                    name: workspace
+            ...
+          ''') {
+            node(POD_LABEL) {
+              container('docker') {
+                // Git 레포지토리의 내용을 사용할 수 있음
+                sh 'docker build -t my-image .'
+                sh 'docker push my-image'
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
