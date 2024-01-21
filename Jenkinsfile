@@ -1,7 +1,11 @@
 pipeline {
   agent any
-
   stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
     stage('Docker pod deploy') {
       steps {
         script {
@@ -35,26 +39,15 @@ pipeline {
           ''') {
             node(POD_LABEL) {
               container('docker') {
-                checkout scm
+                def imageName = "leesy010504/flask-test"
+                def tag = "build-${env.BUILD_NUMBER}"
+				withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                }
+                sh 'docker build -t ${imageName}:${tag} .'
+                sh 'docker push ${imageName}:${tag}'
               }
             }
-          }
-        }
-      }
-    }
-    stage('Build image') {
-      steps {
-        script {
-          def app = docker.build("leesy010504/flask-example")
-        }
-      }
-    }
-    stage('Push image') {
-      steps {
-        script {
-          docker.withRegistry('https://registry.hub.docker.com/', 'dockerhub') {
-            app.push("${env.BUILD_NUMBER}")
-            app.push("latest")
           }
         }
       }
