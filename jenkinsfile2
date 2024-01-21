@@ -10,22 +10,33 @@ pipeline {
       steps {
         script {
           podTemplate(yaml: '''
-            ...
-            volumes:
-              - name: workspace
-                persistentVolumeClaim:
-                  claimName: jenkins-pvc
-            containers:
-              - name: docker
-                ...
-                volumeMounts:
-                  - mountPath: /workspace
-                    name: workspace
-            ...
+            apiVersion: v1
+            kind: Pod
+            spec:
+              serviceAccountName: jenkins-admin
+              volumes:
+                - name: workspace
+                  persistentVolumeClaim:
+                    claimName: jenkins-pvc
+                - name: docker-socket
+                  emptyDir: {}
+              containers:
+                - name: docker
+                  image: docker:19.03-dind
+                  command: [sleep]
+                  args: [99d]
+                  volumeMounts:
+                    - name: workspace
+                      mountPath: /workspace
+                    - name: docker-socket
+                      mountPath: /var/run
+                - name: kubectl
+                  image: bitnami/kubectl:1.26.0
+                  command: [sleep]
+                  args: [99d]
           ''') {
             node(POD_LABEL) {
               container('docker') {
-                // Git 레포지토리의 내용을 사용할 수 있음
                 sh 'docker build -t my-image .'
                 sh 'docker push my-image'
               }
@@ -36,4 +47,3 @@ pipeline {
     }
   }
 }
-
