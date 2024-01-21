@@ -41,7 +41,7 @@ pipeline {
               container('docker') {
                 def imageName = "leesy010504/flask-test"
                 def tag = "${env.BUILD_NUMBER}"
-				withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                     sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
                 }
                 sh 'docker build -t ${imageName}:${tag} .'
