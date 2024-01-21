@@ -39,6 +39,7 @@ pipeline {
           ''') {
             node(POD_LABEL) {
               container('docker') {
+                checkout scm
                 def imageName = "leesy010504/flask-test"
                 def tag = "${env.BUILD_NUMBER}"
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
