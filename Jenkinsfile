@@ -6,6 +6,9 @@ pipeline {
         checkout scm
       }
     }
+    environment {
+      tag = "${env.BUILD_NUMBER}"
+    }
     stage('Docker pod deploy') {
       steps {
         script {
@@ -38,18 +41,31 @@ pipeline {
                   args: [99d]
           ''') {
             node(POD_LABEL) {
-              container('docker') {
+              container('docker-build-push') {
                 checkout scm
                 def imageName = "leesy010504/flask-test"
-                def tag = "${env.BUILD_NUMBER}"
+                sh "sed -i 's|leesy010504/flask-test:.*|${tag}|' ./flask-example-deploy/deployment.yaml"
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                  sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
                 }
                 sh "docker build -t ${imageName}:${tag} ."
                 sh "docker push ${imageName}:${tag}"
               }
             }
           }
+        }
+      }
+    }
+    stage('Commit and Push Changes') {
+      steps {
+        script {
+          sh '''
+            git config user.email "leesy010504@gmail.com"
+            git config user.name "leesy010504"
+            git add .
+            git commit -m "Update deployment to ${env.BUILD_NUMBER}"
+            git push origin master
+          '''
         }
       }
     }
